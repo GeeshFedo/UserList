@@ -1,6 +1,6 @@
 # Clone the repository with below link
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+https://github.com/GeeshFedo/user-list.git
 
 ## Available Scripts
 
