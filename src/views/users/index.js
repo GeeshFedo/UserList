@@ -3,43 +3,44 @@ import {
     Container,
     Row,
     Col,
-    Card
+    Card,
+    Spinner,
+    Alert,
+    Form
 } from 'react-bootstrap';
-import UserCard from '../../components/UserCard';
-import Swal from 'sweetalert2';
-import {
-    getUserList, deleteUser
-} from "../../store/thunks";
-
-//redux
-import { useSelector, useDispatch } from "react-redux";
 import isEmpty from '../../utils/isEmpty';
-import Spinner from 'react-bootstrap/Spinner';
-import Alert from 'react-bootstrap/Alert';
+import filterByValue from "../../utils/filterByValue";
+import Swal from 'sweetalert2';
+import UserCard from '../../components/UserCard';
+import { useFetchUsersQuery, useDeleteUsersMutation } from "../../store";
 
 const Index = () => {
-    const dispatch = useDispatch();
-    const {
-        userList,
-        isLoader,
-        error
-    } = useSelector(state => ({
-        userList: state.User.userList,
-        isLoader: state.User.isLoader,
-        error: state.User.error
-    }));
+    const { data, error, isFetching } = useFetchUsersQuery();
+    const [deleteUsers, results] = useDeleteUsersMutation();
+    const [userList, setUserList] = useState([]);
 
     useEffect(() => {
-        if (isEmpty(userList)) {
-            dispatch(getUserList());
+        if(!isEmpty(data)) {
+            setUserList(data);
         }
-    }, [userList, dispatch]);
+    },[data])
+
+    let content;
+    if (isFetching) {
+      content = <Spinner animation="grow" role="status"  variant="primary" style={{position: 'absolute', top: '50%', left: '50%'}}><span className="visually-hidden">Loading...</span></Spinner>;
+    } else if (error) {
+      content = <Alert variant="danger">{error}</Alert>;
+    } else {
+      content = userList.map((user, key) => {
+        return <UserCard item={user} key={key} handleDelete={(id) => handleDelete(id)}></UserCard>
+      });
+    }
+
+    const handleChange = e => {
+        setUserList(filterByValue(data, e.target.value))
+    }
 
     const handleDelete = (id) => {
-        let data = {
-            id,
-            userList
-        }
         Swal.fire({
             title: 'Are you sure?',
             text: "You won't be able to revert this!",
@@ -50,7 +51,7 @@ const Index = () => {
             confirmButtonText: 'Yes, delete it!'
           }).then((result) => {
             if (result.isConfirmed) {
-                dispatch(deleteUser(data));
+                deleteUsers(id);
                 Swal.fire(
                     'Deleted!',
                     'Record has been deleted.',
@@ -66,20 +67,14 @@ const Index = () => {
                     <Col md="10">
                         <Card>
                             <Card.Header as="h5">Users List</Card.Header>
-                            {isLoader &&
-                            <Spinner animation="grow" role="status"  variant="primary" style={{position: 'absolute', top: '50%', left: '50%'}}>
-                                <span className="visually-hidden">Loading...</span>
-                            </Spinner>
-                            }
+
                             <Card.Body>
-                                {!isEmpty(userList) && userList.map((item, key) => (
-                                    <UserCard item={item} key={key} handleDelete={(id) => handleDelete(id)}></UserCard>
-                                ))}
-                                {!isEmpty(error) &&
-                                    <Alert variant="danger">
-                                        {error}
-                                    </Alert>
-                                }
+                                <Form>
+                                    <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+                                        <Form.Control type="search" placeholder="Search" onChange={handleChange}/>
+                                    </Form.Group>
+                                </Form>
+                                {content}
                             </Card.Body>
                         </Card>
                     </Col>
