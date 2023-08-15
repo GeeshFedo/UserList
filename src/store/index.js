@@ -1,9 +1,20 @@
-import { combineReducers } from "redux";
+import { configureStore } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
 
-import UserReducer from "./users/reducer";
+import { userAPI } from "./api/userAPI";
 
-const rootReducer = combineReducers({
-    User: UserReducer
-});
-
-export default rootReducer;
+const store = configureStore({
+    reducer: {
+      [userAPI.reducerPath]: userAPI.reducer
+    },
+    middleware: (getDefaultMiddleware) => {
+      return getDefaultMiddleware()
+        .concat(userAPI.middleware);
+    },
+  });
+  
+  setupListeners(store.dispatch);
+  
+  export default store;
+  
+  export { useFetchUsersQuery, useDeleteUsersMutation } from "./api/userAPI";
